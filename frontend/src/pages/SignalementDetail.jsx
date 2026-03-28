@@ -111,7 +111,12 @@ export default function SignalementDetail({ id, user, onBack }) {
               {sig.User && (
                 <div style={metaStyle}>
                   <span style={metaLabel}>👤 Signalé par</span>
-                  <span style={metaValue}>{sig.User.nom}</span>
+                  <span style={metaValue}>
+                   {sig.anonyme
+                     ? <em style={{ color: '#7a8a6a' }}> Anonyme</em>
+                     : sig.User.nom
+                    }
+                  </span>
                 </div>
               )}
             </div>

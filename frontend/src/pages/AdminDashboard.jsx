@@ -15,20 +15,23 @@ export default function AdminDashboard({ user, onViewDetail }) {
   const [successMsg, setSuccessMsg]     = useState('');
 
   // Filters & sort — Tasks #29 #30
-  const [filterStatut, setFilterStatut]   = useState('');
-  const [filterCat, setFilterCat]         = useState('');
-  const [sortBy, setSortBy]               = useState('date_desc');
+  const [filterStatut, setFilterStatut] = useState('');
+  const [filterCat, setFilterCat]       = useState('');
+  const [sortBy, setSortBy]             = useState('date_desc');
+  const [search, setSearch]             = useState('');
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [filterStatut, filterCat, search]);
 
   async function fetchAll() {
-    setLoading(true);
-    try {
-      const data = await signalementsAPI.getAll();
-      setSignalements(data);
-    } catch (err) {
-      setError(err.message);
-    }
+   setLoading(true);
+   try {
+     const params = {};
+     if (filterStatut) params.statut    = filterStatut;
+     if (filterCat)    params.categorie = filterCat;
+     if (search)       params.search    = search;
+     const data = await signalementsAPI.getAll(params);
+     setSignalements(data);
+    } catch (err) { setError(err.message); }
     setLoading(false);
   }
 
@@ -125,12 +128,18 @@ export default function AdminDashboard({ user, onViewDetail }) {
           <option value="date_asc">📅 Plus anciens</option>
           <option value="statut">🏷 Par statut</option>
         </select>
-
+        <input
+         type="text"
+         placeholder="🔍 Rechercher..."
+         value={search}
+         onChange={e => setSearch(e.target.value)}
+         style={{ flex: 1, minWidth: 180 }}
+        />
         <span style={{ marginLeft: 'auto', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: 600 }}>
           {displayed.length} résultat(s)
         </span>
       </div>
-
+       
       {/* List */}
       {loading ? (
         <div className="spinner" />
@@ -158,7 +167,10 @@ export default function AdminDashboard({ user, onViewDetail }) {
                     <span>📍 {s.localisation}</span>
                     <span>·</span>
                     <span>📅 {new Date(s.createdAt || s.created_at).toLocaleDateString('fr-FR')}</span>
-                    {s.User && <><span>·</span><span>👤 {s.User.nom}</span></>}
+                    {s.anonyme
+                     ?<><span>·</span><span style={{ fontStyle: 'italic', color: '#6b7280' }}>🕵️ Anonyme</span></>
+                     : s.User && <><span>·</span><span>👤 {s.User.nom}</span></>
+                    }
                   </div>
                 </div>
 

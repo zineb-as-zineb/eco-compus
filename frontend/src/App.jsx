@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import EtudiantDashboard from './pages/EtudiantDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SignalementDetail from './pages/SignalementDetail';
+import StatsDashboard from './pages/StatsDashboard';
 
 export default function App() {
   const [page, setPage]                   = useState('login');
@@ -87,8 +88,12 @@ export default function App() {
 
       case 'detail':
         return <SignalementDetail id={selectedSig} user={user} onBack={goBack} />;
-
-      default:
+      case 'stats':
+       return user?.role === 'admin'
+         ? <StatsDashboard />
+         : <AdminDashboard user={user} onViewDetail={goDetail} />;
+      
+       default:
         return <LoginPage onLogin={handleLogin} onGoRegister={() => setPage('register')} />;
     }
   };

@@ -17,7 +17,7 @@ function validate(fields, photo) {
   return errors;
 }
 
-const EMPTY = { titre: '', description: '', categorie: '', localisation: '' };
+const EMPTY = { titre: '', description: '', categorie: '', localisation: '', anonyme: false };
 
 export default function EtudiantDashboard({ user, onViewDetail, initialView = 'list' }) {
   const [view, setView]       = useState(initialView); // 'list' | 'form'
@@ -49,8 +49,9 @@ export default function EtudiantDashboard({ user, onViewDetail, initialView = 'l
   }
 
   const setField = (k) => (e) => {
-    setFields(f => ({ ...f, [k]: e.target.value }));
-    setErrors(er => ({ ...er, [k]: '' }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+   setFields(f => ({ ...f, [k]: value }));
+   setErrors(er => ({ ...er, [k]: '' }));
   };
 
   const handlePhoto = (file) => {
@@ -132,102 +133,178 @@ export default function EtudiantDashboard({ user, onViewDetail, initialView = 'l
     );
   }
 
-  // ── Form ────────────────────────────────────────────────────────────────
-  if (view === 'form') {
-    return (
-      <div className="page-content">
-        <div className="page-header">
-          <div>
-            <button className="detail-back" onClick={() => setView('list')}>← Retour</button>
-            <h2>Nouveau signalement</h2>
-          </div>
-        </div>
-
-        <div className="card" style={{ maxWidth: 680 }}>
-          {apiError && <div className="alert alert-error">⚠️ {apiError}</div>}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label>Titre *</label>
-              <input type="text" placeholder="Ex: Fuite d'eau au bloc B" maxLength={120}
-                value={fields.titre} onChange={setField('titre')}
-                className={errors.titre ? 'error' : ''} />
-              {errors.titre && <div className="field-error">⚠ {errors.titre}</div>}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="form-group">
-                <label>Catégorie *</label>
-                <select value={fields.categorie} onChange={setField('categorie')}
-                  className={errors.categorie ? 'error' : ''}>
-                  <option value="">-- Choisir --</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
-                </select>
-                {errors.categorie && <div className="field-error">⚠ {errors.categorie}</div>}
-              </div>
-
-              <div className="form-group">
-                <label>Localisation *</label>
-                <input type="text" placeholder="Bâtiment, salle..."
-                  value={fields.localisation} onChange={setField('localisation')}
-                  className={errors.localisation ? 'error' : ''} />
-                {errors.localisation && <div className="field-error">⚠ {errors.localisation}</div>}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Description *</label>
-              <textarea placeholder="Décrivez le problème en détail..." rows={4}
-                value={fields.description} onChange={setField('description')}
-                className={errors.description ? 'error' : ''} />
-              {errors.description && <div className="field-error">⚠ {errors.description}</div>}
-            </div>
-
-            {/* Photo upload — Task #22 */}
-            <div className="form-group">
-              <label>Photo (optionnel)</label>
-              <div
-                className={`upload-zone ${preview ? 'active' : ''}`}
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => fileRef.current.click()}
-              >
-                <input ref={fileRef} type="file" accept="image/*"
-                  onChange={(e) => handlePhoto(e.target.files[0])} />
-                {preview ? (
-                  <div>
-                    <img src={preview} alt="preview"
-                      style={{ maxHeight: 180, borderRadius: 8, marginBottom: 8 }} />
-                    <p style={{ color: 'var(--green-mid)', fontSize: '0.82rem', fontWeight: 700 }}>
-                      📷 {photo?.name} ({(photo?.size / 1024).toFixed(0)} Ko)
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>📷</div>
-                    <p style={{ color: 'var(--text-light)', fontWeight: 600 }}>
-                      Glissez une photo ici ou cliquez
-                    </p>
-                    <p style={{ color: 'var(--text-light)', fontSize: '0.8rem' }}>JPG, PNG — max 5 Mo</p>
-                  </div>
-                )}
-              </div>
-              {errors.photo && <div className="field-error">⚠ {errors.photo}</div>}
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setView('list')}>
-                Annuler
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={sending}>
-                {sending ? '⏳ Envoi...' : '🌿 Soumettre le signalement'}
-              </button>
-            </div>
-          </form>
+ // ── Formulaire Nouveau Signalement ─────────────────────────────
+if (view === 'form') {
+  return (
+    <div className="page-content">
+      
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <button className="detail-back" onClick={() => setView('list')}>
+            ← Retour
+          </button>
+          <h2>Nouveau signalement</h2>
         </div>
       </div>
-    );
-  }
+
+      <div className="card" style={{ maxWidth: 680 }}>
+        {/* Erreur API */}
+        {apiError && <div className="alert alert-error">⚠️ {apiError}</div>}
+
+        <form onSubmit={handleSubmit} noValidate>
+
+          {/* Titre */}
+          <div className="form-group">
+            <label>Titre *</label>
+            <input
+              type="text"
+              placeholder="Ex: Fuite d'eau au bloc B"
+              maxLength={120}
+              value={fields.titre}
+              onChange={setField('titre')}
+              className={errors.titre ? 'error' : ''}
+            />
+            {errors.titre && <div className="field-error">⚠ {errors.titre}</div>}
+          </div>
+
+          {/* Catégorie + Localisation */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            
+            <div className="form-group">
+              <label>Catégorie *</label>
+              <select
+                value={fields.categorie}
+                onChange={setField('categorie')}
+                className={errors.categorie ? 'error' : ''}
+              >
+                <option value="">-- Choisir --</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+              </select>
+              {errors.categorie && <div className="field-error">⚠ {errors.categorie}</div>}
+            </div>
+
+            <div className="form-group">
+              <label>Localisation *</label>
+              <input
+                type="text"
+                placeholder="Bâtiment, salle..."
+                value={fields.localisation}
+                onChange={setField('localisation')}
+                className={errors.localisation ? 'error' : ''}
+              />
+              {errors.localisation && <div className="field-error">⚠ {errors.localisation}</div>}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="form-group">
+            <label>Description *</label>
+            <textarea
+              placeholder="Décrivez le problème en détail..."
+              rows={4}
+              value={fields.description}
+              onChange={setField('description')}
+              className={errors.description ? 'error' : ''}
+            />
+            {errors.description && <div className="field-error">⚠ {errors.description}</div>}
+          </div>
+
+          {/* Option Anonyme */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '14px 16px',
+              background: '#f9fafb',
+              borderRadius: '8px',
+              border: '2px solid #dde8d5',
+              cursor: 'pointer',
+              marginBottom: 4,
+            }}
+            onClick={() => setFields(f => ({ ...f, anonyme: !f.anonyme }))}
+          >
+            <div
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                flexShrink: 0,
+                border: `2px solid ${fields.anonyme ? '#2d7a45' : '#dde8d5'}`,
+                background: fields.anonyme ? '#2d7a45' : '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {fields.anonyme && (
+                <span style={{ color: '#fff', fontSize: '0.8rem' }}>✓</span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>🕵️ Soumettre anonymement</div>
+              <div style={{ fontSize: '0.78rem', color: '#7a8a6a' }}>
+                Votre nom ne sera pas visible par les autres étudiants
+              </div>
+            </div>
+          </div>
+
+          {/* Upload Photo */}
+          <div className="form-group">
+            <label>Photo (optionnel)</label>
+            <div
+              className={`upload-zone ${preview ? 'active' : ''}`}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileRef.current.click()}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handlePhoto(e.target.files[0])}
+              />
+
+              {preview ? (
+                <div>
+                  <img
+                    src={preview}
+                    alt="preview"
+                    style={{ maxHeight: 180, borderRadius: 8, marginBottom: 8 }}
+                  />
+                  <p style={{ color: 'var(--green-mid)', fontSize: '0.82rem', fontWeight: 700 }}>
+                    📷 {photo?.name} ({(photo?.size / 1024).toFixed(0)} Ko)
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>📷</div>
+                  <p style={{ color: 'var(--text-light)', fontWeight: 600 }}>
+                    Glissez une photo ici ou cliquez
+                  </p>
+                  <p style={{ color: 'var(--text-light)', fontSize: '0.8rem' }}>JPG, PNG — max 5 Mo</p>
+                </div>
+              )}
+            </div>
+            {errors.photo && <div className="field-error">⚠ {errors.photo}</div>}
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setView('list')}>
+              Annuler
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={sending}>
+              {sending ? '⏳ Envoi...' : '🌿 Soumettre le signalement'}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  );
+}
 
   // ── List ────────────────────────────────────────────────────────────────
   return (
@@ -263,8 +340,17 @@ export default function EtudiantDashboard({ user, onViewDetail, initialView = 'l
             <div key={s.id} className="sig-card" onClick={() => onViewDetail(s)}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <span className="sig-card-cat">{CAT_LABELS[s.categorie] ?? s.categorie}</span>
-                <StatusBadge statut={s.statut} size="sm" />
-              </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {s.anonyme && (
+             <span style={{
+              background: '#f3f4f6', color: '#6b7280',
+              border: '1.5px solid #d1d5db', borderRadius: 20,
+              fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px',
+             }}>🕵️ Anonyme</span>
+            )}
+             <StatusBadge statut={s.statut} size="sm" />
+            </div>
+        </div>
               <div className="sig-card-title">{s.titre}</div>
               <div className="sig-card-meta">
                 <span>📍 {s.localisation}</span>

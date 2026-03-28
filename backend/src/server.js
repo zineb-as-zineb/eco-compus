@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./models/Notification');
 const express   = require('express');
 const cors      = require('cors');
 const path      = require('path');
@@ -21,7 +22,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/signalements', require('./routes/signalements'));
-
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/stats',         require('./routes/stats'));
 // Santé du serveur
 app.get('/', (req, res) =>
   res.json({ status: '🌱 Campus Éco API opérationnelle', version: '1.0.0' })

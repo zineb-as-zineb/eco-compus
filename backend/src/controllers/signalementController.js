@@ -1,4 +1,5 @@
 const Signalement = require('../models/Signalement');
+const { Op } = require('sequelize');
 const User        = require('../models/User');
 
 // ── Logique de suggestion par catégorie ────────────────────────────────────
@@ -19,11 +20,34 @@ const genSuggestion = (categorie) => {
 // GET /api/signalements
 exports.getAll = async (req, res) => {
   try {
+    const { categorie, statut, search } = req.query;
+    const where = {};
+
+    if (categorie) where.categorie = categorie;
+    if (statut)    where.statut    = statut;
+    if (search) {
+      where[Op.or] = [
+        { titre:        { [Op.iLike]: `%${search}%` } },
+        { localisation: { [Op.iLike]: `%${search}%` } },
+        { description:  { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+
     const signalements = await Signalement.findAll({
+      where,
       include: [{ model: User, attributes: ['id', 'nom', 'email'] }],
       order: [['createdAt', 'DESC']],
     });
-    res.json(signalements);
+
+    const result = signalements.map(s => {
+      const data = s.toJSON();
+      if (data.anonyme && req.user.role !== 'admin') {
+        data.User = { id: null, nom: 'Anonyme', email: null };
+      }
+      return data;
+    });
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -32,7 +56,7 @@ exports.getAll = async (req, res) => {
 // POST /api/signalements
 exports.create = async (req, res) => {
   try {
-    const { titre, description, categorie, localisation } = req.body;
+    const { titre, description, categorie, localisation, anonyme } = req.body;
 
     if (!titre || !description || !categorie || !localisation)
       return res.status(400).json({ message: 'Champs requis : titre, description, categorie, localisation' });
@@ -52,6 +76,7 @@ exports.create = async (req, res) => {
       suggestion,
       photo,
       user_id: req.user.id,
+       anonyme: anonyme === 'true' || anonyme === true,
     });
 
     res.status(201).json(signalement);

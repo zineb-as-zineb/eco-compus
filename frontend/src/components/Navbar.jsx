@@ -1,5 +1,7 @@
 // Tasks #7 #8 #9 — Navbar responsive + routes + état connexion
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import NotificationsPanel from './NotificationsPanel';
+import { notificationsAPI } from '../api/api';
 
 const NAV_LINKS_ETUDIANT = [
   { id: 'dashboard', label: '🌿 Mes signalements' },
@@ -7,15 +9,29 @@ const NAV_LINKS_ETUDIANT = [
 ];
 
 const NAV_LINKS_ADMIN = [
-  { id: 'admin', label: '📋 Tous les signalements' },
+  { id: 'admin', label: '📋 Signalements' },
+  { id: 'stats', label: '📊 Statistiques' },
 ];
-
 export default function Navbar({ user, page, onNavigate, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const links = user?.role === 'admin' ? NAV_LINKS_ADMIN : NAV_LINKS_ETUDIANT;
 
   const handleNav = (id) => { onNavigate(id); setMenuOpen(false); };
+  const [showNotifs, setShowNotifs]   = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  useEffect(() => {
+   fetchUnread();
+   const interval = setInterval(fetchUnread, 30000);
+   return () => clearInterval(interval);
+  }, []);
+
+  async function fetchUnread() {
+   try {
+     const data = await notificationsAPI.getAll();
+     setUnreadCount(data.filter(n => !n.lu).length);
+    } catch { /* silent */ }
+  }
   return (
     <nav style={styles.nav}>
       <div style={styles.inner}>
@@ -37,7 +53,27 @@ export default function Navbar({ user, page, onNavigate, onLogout }) {
             </button>
           ))}
         </div>
-
+        <div style={{ position: 'relative' }}>
+         <button onClick={() => setShowNotifs(o => !o)} style={{
+           background: 'rgba(255,255,255,0.12)',
+           border: '1px solid rgba(255,255,255,0.25)',
+           color: '#fff', cursor: 'pointer',
+           borderRadius: 8, padding: '6px 10px', fontSize: '1rem',
+          }}>
+            {unreadCount > 0 && (
+             <span style={{
+               position: 'absolute', top: -4, right: -4,
+               background: '#ef4444', color: '#fff',
+               borderRadius: '50%', width: 18, height: 18,
+               fontSize: '0.65rem', fontWeight: 800,
+               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{unreadCount}</span>
+            )}
+          </button>
+          {showNotifs && (
+           <NotificationsPanel onClose={() => { setShowNotifs(false); fetchUnread(); }} />
+          )}
+        </div>
         {/* User info + logout — desktop */}
         <div style={styles.userDesktop} className="nav-user-desktop">
           <div style={styles.avatar}>{user?.nom?.[0]?.toUpperCase() ?? '?'}</div>

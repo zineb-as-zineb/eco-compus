@@ -34,9 +34,12 @@ export const authAPI = {
 
 // ── Signalements ─────────────────────────────────────────────────────────────
 export const signalementsAPI = {
-  getAll: () =>
-    fetch(`${BASE_URL}/signalements`, { headers: authHeaders() }).then(handleResponse),
-
+  getAll: (params = {}) => {
+   const query = new URLSearchParams(params).toString();
+   return fetch(`${BASE_URL}/signalements${query ? `?${query}` : ''}`, {
+    headers: authHeaders(),
+   }).then(handleResponse);
+  },
   create: (formData) =>
     fetch(`${BASE_URL}/signalements`, {
       method: 'POST',
@@ -53,6 +56,27 @@ export const signalementsAPI = {
 
   getSuggestion: (id) =>
     fetch(`${BASE_URL}/signalements/${id}/suggestion`, {
+      headers: authHeaders(),
+    }).then(handleResponse),
+};
+export const notificationsAPI = {
+  getAll: () =>
+    fetch(`${BASE_URL}/notifications`, { headers: authHeaders() }).then(handleResponse),
+
+  marquerLu: (id) =>
+    fetch(`${BASE_URL}/notifications/${id}/lu`, {
+      method: 'PUT', headers: authHeaders(),
+    }).then(handleResponse),
+
+  marquerToutLu: () =>
+    fetch(`${BASE_URL}/notifications/lire-tout`, {
+      method: 'PUT', headers: authHeaders(),
+    }).then(handleResponse),
+};
+
+export const statsAPI = {
+  get: (periode = 'tout') =>
+    fetch(`${BASE_URL}/stats?periode=${periode}`, {
       headers: authHeaders(),
     }).then(handleResponse),
 };

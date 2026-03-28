@@ -31,6 +31,11 @@ const Signalement = sequelize.define('Signalement', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+   
+  anonyme: {
+   type: DataTypes.BOOLEAN,
+   defaultValue: false,
+  },
   user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,

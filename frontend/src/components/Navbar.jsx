@@ -54,20 +54,31 @@ export default function Navbar({ user, page, onNavigate, onLogout }) {
           ))}
         </div>
         <div style={{ position: 'relative' }}>
-         <button onClick={() => setShowNotifs(o => !o)} style={{
-           background: 'rgba(255,255,255,0.12)',
-           border: '1px solid rgba(255,255,255,0.25)',
-           color: '#fff', cursor: 'pointer',
-           borderRadius: 8, padding: '6px 10px', fontSize: '1rem',
-          }}>
+         <button 
+           onClick={() => setShowNotifs(o => !o)} 
+           style={{
+             background: 'rgba(255,255,255,0.12)',
+             border: '1px solid rgba(255,255,255,0.25)',
+             color: '#fff', cursor: 'pointer',
+             borderRadius: 8, padding: '6px 10px', fontSize: '1rem',
+             transition: 'background 0.2s',
+            }}
+            title="Notifications"
+          >
+            🔔
             {unreadCount > 0 && (
              <span style={{
-               position: 'absolute', top: -4, right: -4,
+               position: 'absolute', top: -6, right: -6,
                background: '#ef4444', color: '#fff',
                borderRadius: '50%', width: 18, height: 18,
                fontSize: '0.65rem', fontWeight: 800,
                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>{unreadCount}</span>
+               padding: '0 3px',
+               boxShadow: '0 0 0 2px #1e4d2b',
+               pointerEvents: 'none',
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
           {showNotifs && (

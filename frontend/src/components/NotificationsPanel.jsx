@@ -2,82 +2,87 @@ import { useState, useEffect } from 'react';
 import { notificationsAPI } from '../api/api';
 
 export default function NotificationsPanel({ onClose }) {
-  const [notifs, setNotifs]   = useState([]);
+  const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchNotifs(); }, []);
+  useEffect(() => {
+    notificationsAPI.getAll()
+      .then(data => setNotifs(data))
+      .finally(() => setLoading(false));
+  }, []);
 
-  async function fetchNotifs() {
-    try {
-      const data = await notificationsAPI.getAll();
-      setNotifs(data);
-    } catch { /* silent */ }
-    setLoading(false);
-  }
-
-  const marquerToutLu = async () => {
-    await notificationsAPI.marquerToutLu();
-    setNotifs(n => n.map(x => ({ ...x, lu: true })));
-  };
-
-  const marquerLu = async (id) => {
-    await notificationsAPI.marquerLu(id);
-    setNotifs(n => n.map(x => x.id === id ? { ...x, lu: true } : x));
+  const handleMarkAllRead = async () => {
+   await notificationsAPI.markAllRead();
+   setNotifs([]); 
   };
 
   return (
     <div style={{
-      position: 'absolute', top: 68, right: 16, zIndex: 200,
-      background: '#fff', borderRadius: 12, width: 340,
-      boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
-      border: '1px solid #dde8d5', overflow: 'hidden',
+      position: 'absolute', top: 44, right: 0, zIndex: 200,
+      width: 340, background: '#fff', borderRadius: 14,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      border: '1px solid #e5e7eb', overflow: 'hidden',
     }}>
+      {/* Header */}
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '14px 16px', borderBottom: '1px solid #dde8d5',
-        background: '#f4f1eb',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 16px', borderBottom: '1px solid #f0f0f0',
       }}>
-        <h3 style={{ fontSize: '0.95rem', color: '#1e4d2b', margin: 0 }}>
-          🔔 Notifications
-        </h3>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={marquerToutLu} style={{
-            fontSize: '0.72rem', color: '#2d7a45', background: 'none',
-            border: 'none', cursor: 'pointer', fontWeight: 700,
-          }}>Tout lire</button>
+        <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>🔔 Notifications</span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {notifs.some(n => !n.lu) && (
+            <button onClick={handleMarkAllRead} style={{
+              background: 'none', border: 'none', color: '#2d7a45',
+              cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
+            }}>
+              Tout lire
+            </button>
+          )}
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '1rem', color: '#6b7280',
+            fontSize: '1.1rem', color: '#999', lineHeight: 1,
           }}>✕</button>
         </div>
       </div>
 
-      <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+      {/* Liste */}
+      <div style={{ maxHeight: 340, overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ padding: 24, textAlign: 'center', color: '#7a8a6a' }}>⏳ Chargement...</div>
+          <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>
+            Chargement...
+          </div>
         ) : notifs.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#7a8a6a' }}>
-            <div style={{ fontSize: '2rem', marginBottom: 8 }}>📭</div>
-            Aucune notification
+          <div style={{ padding: 32, textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem' }}>📭</div>
+            <p style={{ color: '#aaa', marginTop: 8 }}>Aucune notification</p>
           </div>
-        ) : notifs.map(n => (
-          <div key={n.id} onClick={() => marquerLu(n.id)} style={{
-            padding: '12px 16px', cursor: 'pointer',
-            background: n.lu ? '#fff' : '#f0fdf4',
-            borderBottom: '1px solid #f3f4f6',
-            borderLeft: `3px solid ${n.lu ? 'transparent' : '#2d7a45'}`,
-          }}>
-            <div style={{ fontSize: '0.88rem', color: '#1a2510', fontWeight: n.lu ? 400 : 700 }}>
-              {n.message}
+        ) : (
+          notifs.map(n => (
+            <div key={n.id} style={{
+              padding: '12px 16px',
+              background: n.lu ? '#fff' : '#f0fdf4',
+              borderBottom: '1px solid #f5f5f5',
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+            }}>
+              {/* Point rouge si non lu */}
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: n.lu ? 'transparent' : '#ef4444',
+                marginTop: 5,
+              }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#333', lineHeight: 1.4 }}>
+                  {n.message}
+                </p>
+                <span style={{ fontSize: '0.72rem', color: '#aaa', marginTop: 4, display: 'block' }}>
+                  {new Date(n.createdAt).toLocaleDateString('fr-FR', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+              </div>
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#7a8a6a', marginTop: 4 }}>
-              {new Date(n.createdAt).toLocaleDateString('fr-FR', {
-                day: 'numeric', month: 'short',
-                hour: '2-digit', minute: '2-digit',
-              })}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

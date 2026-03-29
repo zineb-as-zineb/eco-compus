@@ -67,7 +67,7 @@ export const notificationsAPI = {
     fetch(`${BASE_URL}/notifications/${id}/lu`, {
       method: 'PUT', headers: authHeaders(),
     }).then(handleResponse),
-
+  markAllRead: () => api.put('/notifications/lire-tout'),
   marquerToutLu: () =>
     fetch(`${BASE_URL}/notifications/lire-tout`, {
       method: 'PUT', headers: authHeaders(),

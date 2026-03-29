@@ -66,7 +66,7 @@ export default function LoginPage({ onLogin, onGoRegister }) {
             <div className="form-group">
               <label htmlFor="email">Adresse email</label>
               <input
-                id="email" type="email" placeholder="vous@universite.dz"
+                id="email" type="email" placeholder="vous@gmail.com"
                 value={fields.email} onChange={set('email')}
                 className={errors.email ? 'error' : ''}
               />

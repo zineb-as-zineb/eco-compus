@@ -1,7 +1,7 @@
 const Signalement = require('../models/Signalement');
 const { Op } = require('sequelize');
 const User        = require('../models/User');
-
+const Notification = require('../models/Notification');
 // ── Logique de suggestion par catégorie ────────────────────────────────────
 const genSuggestion = (categorie) => {
   const suggestions = {
@@ -76,8 +76,18 @@ exports.create = async (req, res) => {
       suggestion,
       photo,
       user_id: req.user.id,
-       anonyme: anonyme === 'true' || anonyme === true,
+      anonyme: anonyme === 'true' || anonyme === true,
     });
+
+    // ✅ Notifier tous les admins
+    const admins = await User.findAll({ where: { role: 'admin' } });
+    await Promise.all(admins.map(admin =>
+      Notification.create({
+        user_id: admin.id,
+        signalement_id: signalement.id,
+        message: `📋 Nouveau signalement : "${titre}" — catégorie ${categorie}`,
+      })
+    ));
 
     res.status(201).json(signalement);
   } catch (err) {
@@ -102,6 +112,15 @@ exports.updateStatut = async (req, res) => {
       return res.status(404).json({ message: 'Signalement introuvable' });
 
     await sig.update({ statut });
+
+    // ✅ Notifier l'étudiant qui a créé le signalement
+    const labels = { en_attente: '⏳ En attente', en_cours: '🔧 En cours', traite: '✅ Traité' };
+    await Notification.create({
+      user_id: sig.user_id,
+      signalement_id: sig.id,
+      message: `Votre signalement "${sig.titre}" est maintenant : ${labels[statut]}`,
+    });
+
     res.json(sig);
   } catch (err) {
     res.status(500).json({ message: err.message });
